@@ -55,7 +55,7 @@ def make_left_point(left, Y = 1070):
     return LX
 
 # ---------- MAIN (IMAGE VERSION, LEFT LANE ONLY) ----------
-image_path = "/home/winkawin2552/Code/project_m.5/my_photo-2.jpg"  # put your image path here
+image_path = "my_photo-2.jpg"  # put your image path here
 frame = cv.imread(image_path)
 
 if frame is None:

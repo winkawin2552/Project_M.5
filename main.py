@@ -22,7 +22,7 @@ def pos_white(binary_img):
     return contours
 
 video_path = "my_video-3.mkv" 
-cap = cv.VideoCapture(2)
+cap = cv.VideoCapture(video_path)
 cap.set(cv.CAP_PROP_FRAME_WIDTH, 320)
 cap.set(cv.CAP_PROP_FRAME_HEIGHT, 240)
 
@@ -30,7 +30,7 @@ cap.set(cv.CAP_PROP_FRAME_HEIGHT, 240)
 y1, y2 = 140, 150
 x1, x2 = 0, 320
 
-mid = [160 ,4]
+mid = [160 ,144]
 dist_mid = 151
 
 while cap.isOpened():
@@ -49,7 +49,6 @@ while cap.isOpened():
 
     contours = pos_white(thresh)
 
-    cv.circle(cropped_frame, mid, 5, (0,255,0), -1)
     for cnt in contours:
             M = cv.moments(cnt)
             if M["m00"] != 0:
@@ -60,11 +59,12 @@ while cap.isOpened():
                     print(f'Dist Left: {dist}')
                 else:
                     print(f'Dist Right: {dist}')
-                cv.circle(cropped_frame, (cx, cy), 5, (255, 0, 0), -1)
-                cv.line(cropped_frame, mid, (cx, cy), (0,0,0), 2)
+                cv.line(frame, mid, (cx, cy+140), (0,0,0), 2)
+                cv.circle(frame, (cx, cy+ 140), 5, (255, 0, 0), -1)
     print('-------------------------')
 
-    cv.imshow('Processed ROI', cropped_frame)
+    cv.circle(frame, mid, 5, (0,255,0), -1)
+    cv.imshow('Processed ROI', frame)
 
     if cv.waitKey(100) & 0xFF == ord('q'):
         break

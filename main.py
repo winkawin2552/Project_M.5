@@ -36,20 +36,22 @@ def pos_white(binary_img):
 def adjust_motor(store_dist, dist_mid = 151):
     store_dist = sorted(store_dist)
     print(store_dist)
-    if len(store_dist) == 2:
-        diff = abs(store_dist[0]) - abs(store_dist[1])
-        print(f'Find two: {diff}')
-    else:
-        if store_dist[0] < 0:
-            diff = dist_mid - abs(store_dist[0])
-            print(f'Left: {diff}')
+    try:
+        if len(store_dist) == 2:
+            diff = abs(store_dist[0]) - abs(store_dist[1])
+            print(f'Find two: {diff}')
         else:
-            diff = dist_mid - store_dist[0]
-            print(f'Right: {diff}')
-    pass
+            if store_dist[0] < 0:
+                diff = dist_mid - abs(store_dist[0])
+                print(f'Left: {diff}')
+            else:
+                diff = dist_mid - store_dist[0]
+                print(f'Right: {diff}')
+    except:
+        pass
 
 video_path = "my_video-3.mkv" 
-cap = cv.VideoCapture(video_path)
+cap = cv.VideoCapture(2)
 cap.set(cv.CAP_PROP_FRAME_WIDTH, 320)
 cap.set(cv.CAP_PROP_FRAME_HEIGHT, 240)
 
@@ -57,7 +59,8 @@ cap.set(cv.CAP_PROP_FRAME_HEIGHT, 240)
 y1, y2 = 140, 150
 x1, x2 = 0, 320
 
-mid = [160 ,144]
+plus = 0 # 140
+mid = [160 ,4 + plus]
 dist_mid = 140
 
 while cap.isOpened():
@@ -83,14 +86,14 @@ while cap.isOpened():
             cy = int(M["m01"] / M["m00"])
             dist = cx - mid[0]
             store_dist.append(dist)
-            cv.line(frame, mid, (cx, cy+140), (0,0,0), 2)
-            cv.circle(frame, (cx, cy+ 140), 5, (255, 0, 0), -1)
+            cv.line(cropped_frame, mid, (cx, cy+plus), (0,0,0), 2)
+            cv.circle(cropped_frame, (cx, cy+ plus), 5, (255, 0, 0), -1)
     adjust_motor(store_dist, dist_mid)
 
-    cv.circle(frame, mid, 5, (0,255,0), -1)
-    cv.imshow('Processed ROI', frame)
+    cv.circle(cropped_frame, mid, 5, (0,255,0), -1)
+    cv.imshow('Processed ROI', cropped_frame)
 
-    if cv.waitKey(100) & 0xFF == ord('q'):
+    if cv.waitKey(33) & 0xFF == ord('q'):
         break
 
 cap.release()

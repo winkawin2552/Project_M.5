@@ -1,8 +1,8 @@
 import cv2 as cv
 import numpy as np
-# from libraries.l298n import L298N
-# from RPi.GPIO import *
-# setmode(BCM)
+from libraries.l298n import L298N
+from RPi.GPIO import *
+setmode(BCM)
 
 def white_detect(frame):
     try:
@@ -24,34 +24,50 @@ def pos_white(binary_img):
                                          cv.CHAIN_APPROX_NONE)
     return contours
 
-# motor1 = L298N([22, 27, 17])
-# motor2 = L298N([24, 23, 25])
+motorR = L298N([22, 27, 17])
+motorL = L298N([24, 23, 25])
 
-# speed = 50
+speed_default = 60
 
-# while 1:
-        # motor1.setSpeed(speed, True)
-        # motor2.setSpeed(speed, True)
+speedR = speed_default
+speedL = speed_default
 
 def adjust_motor(store_dist, dist_mid = 151):
     store_dist = sorted(store_dist)
     print(store_dist)
+    speedR = speed_default
+    speedL = speed_default
     try:
         if len(store_dist) == 2:
             diff = abs(store_dist[0]) - abs(store_dist[1])
+            if diff < 0:
+                speedL += abs(diff)
+            else:
+                speedR += abs(diff)
             print(f'Find two: {diff}')
         else:
             if store_dist[0] < 0:
                 diff = dist_mid - abs(store_dist[0])
+                speedL += diff
                 print(f'Left: {diff}')
             else:
                 diff = dist_mid - store_dist[0]
+                speedR += diff
                 print(f'Right: {diff}')
+        if speedR > 100:
+            speedR = 100
+        if speedL > 100:
+            speedL = 100
+        print(f"speedR: {speedR}, speedL: {speedL}")
+        motorR.setSpeed(speedR, True)
+        motorL.setSpeed(speedL, True)
     except:
         pass
+    motorR.setSpeed(speedR, True)
+    motorL.setSpeed(speedL, True)
 
 video_path = "my_video-3.mkv" 
-cap = cv.VideoCapture(2)
+cap = cv.VideoCapture(0)
 cap.set(cv.CAP_PROP_FRAME_WIDTH, 320)
 cap.set(cv.CAP_PROP_FRAME_HEIGHT, 240)
 

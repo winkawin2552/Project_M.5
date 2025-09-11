@@ -32,35 +32,43 @@ speed_default = 60
 speedR = speed_default
 speedL = speed_default
 
+collect_error = []
+
 def adjust_motor(store_dist, dist_mid = 151):
     store_dist = sorted(store_dist)
     print(store_dist)
     speedR = speed_default
     speedL = speed_default
     try:
-        if len(store_dist) == 2:
+        if len(store_dist) == 4:
             diff = abs(store_dist[0]) - abs(store_dist[1])
             if diff < 0:
-                speedL += abs(diff)
+                collect_error.append([abs(diff), 0])
             else:
-                speedR += abs(diff)
+                collect_error.append([0, abs(diff)])
             print(f'Find two: {diff}')
         else:
-            if store_dist[0] < 0:
+            if store_dist[0] < 0: # find only left
                 diff = dist_mid - abs(store_dist[0])
-                speedL += diff
+                collect_error.append([abs(diff), 0])
                 print(f'Left: {diff}')
-            else:
+            else: # find only right
                 diff = dist_mid - store_dist[0]
-                speedR += diff
+                collect_error.append([0, abs(diff)])
                 print(f'Right: {diff}')
+        speedL += collect_error[0][0]
+        speedR += collect_error[0][1]
+        if len(collect_error) == 6:
+            collect_error.pop(0)
+        print(len(collect_error))
+        print(f'left: {collect_error[0][0]}, right: {collect_error[0][1]}')
         if speedR > 100:
             speedR = 100
+            speedL -= 10
         if speedL > 100:
             speedL = 100
+            speedR -= 10
         print(f"speedR: {speedR}, speedL: {speedL}")
-        motorR.setSpeed(speedR, True)
-        motorL.setSpeed(speedL, True)
     except:
         pass
     motorR.setSpeed(speedR, True)

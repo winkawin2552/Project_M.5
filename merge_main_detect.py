@@ -2,8 +2,10 @@ import cv2 as cv
 import numpy as np
 from libraries.l298n import L298N
 from RPi.GPIO import *
+from ultralytics import YOLO
 setmode(BCM)
 
+model = YOLO("best.torchscript")
 def white_detect(frame):
     try:
         blur = cv.GaussianBlur(frame, (5,5), 0)
@@ -24,8 +26,8 @@ def pos_white(binary_img):
                                          cv.CHAIN_APPROX_NONE)
     return contours
 
-motorR = L298N([23, 24, 25]) # 22, 27, 17
-motorL = L298N([27, 22, 17]) # 24, 23, 25
+motorR = L298N([23, 24, 25]) 
+motorL = L298N([27, 22, 17]) 
 
 speed_default = 60
 
@@ -74,7 +76,20 @@ def adjust_motor(store_dist, dist_mid = 151):
     motorR.setSpeed(speedR, True)
     motorL.setSpeed(speedL, True)
 
-video_path = "my_video-3.mkv" 
+def detect(frame):
+    results = model.predict(frame)
+    collect = dict()
+
+    frame = results[0].plot()
+
+    for box in results[0].boxes:
+        x1, y1, x2, y2 = box.xyxy[0].tolist()  
+        conf = float(box.conf[0])             
+        cls = int(box.cls[0])                  
+        label = model.names[cls]
+        collect[label] = [[x1, y1, x2, y2], conf]
+    return collect          
+
 cap = cv.VideoCapture(0)
 cap.set(cv.CAP_PROP_FRAME_WIDTH, 320)
 cap.set(cv.CAP_PROP_FRAME_HEIGHT, 240)
@@ -87,12 +102,14 @@ plus = 0 # 140
 mid = [160 ,4 + plus]
 dist_mid = 140
 
+count = 0
 while cap.isOpened():
     ret, frame = cap.read()
     if not ret:
         break
-
+#-------------------------------LANE DETECT--------------------------------------------------
     frame = cv.resize(frame, (320, 240))
+    resize = cv.resize(frame, (160, 120))
 
     cropped_frame = frame[y1:y2, x1:x2]
 
@@ -110,12 +127,18 @@ while cap.isOpened():
             cy = int(M["m01"] / M["m00"])
             dist = cx - mid[0]
             store_dist.append(dist)
-            # cv.line(cropped_frame, mid, (cx, cy+plus), (0,0,0), 2)
-            # cv.circle(cropped_frame, (cx, cy+ plus), 5, (255, 0, 0), -1)
+            cv.line(cropped_frame, mid, (cx, cy+plus), (0,0,0), 2)
+            cv.circle(cropped_frame, (cx, cy+ plus), 5, (255, 0, 0), -1)
     adjust_motor(store_dist, dist_mid)
 
-    # cv.circle(cropped_frame, mid, 5, (0,255,0), -1)
-    # cv.imshow('Processed ROI', cropped_frame)
+    cv.circle(cropped_frame, mid, 5, (0,255,0), -1)
+#----------------------------------OBJECT DETECT----------------------------------------------
+    count += 1
+    if count == 7:
+        describe = detect(frame)
+        count = 0
+#---------------------------------------------------------------------------------------------
+    cv.imshow('Processed ROI', cropped_frame)
 
     if cv.waitKey(33) & 0xFF == ord('q'):
         break

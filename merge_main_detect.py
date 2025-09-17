@@ -34,11 +34,19 @@ speed_default = 60
 speedR = speed_default
 speedL = speed_default
 
-collect_error = []
+motorR.setSpeed(0, True)
+motorL.setSpeed(0, True)
 
+collect_error = []
+start = 0
+
+find_something = 1
 def adjust_motor(store_dist, dist_mid = 151):
+
+    global find_something
+    global start
+
     store_dist = sorted(store_dist)
-    print(store_dist)
     speedR = speed_default
     speedL = speed_default
     try:
@@ -48,36 +56,30 @@ def adjust_motor(store_dist, dist_mid = 151):
                 collect_error.append([abs(diff), 0])
             else:
                 collect_error.append([0, abs(diff)])
-            print(f'Find two: {diff}')
         else:
             if store_dist[0] < 0: # find only left
                 diff = dist_mid - abs(store_dist[0])
                 collect_error.append([abs(diff), 0])
-                print(f'Left: {diff}')
             else: # find only right
                 diff = dist_mid - store_dist[0]
                 collect_error.append([0, abs(diff)])
-                print(f'Right: {diff}')
         speedL += collect_error[0][0]
         speedR += collect_error[0][1]
         if len(collect_error) == 2:
             collect_error.pop(0)
-        print(len(collect_error))
-        print(f'left: {collect_error[0][0]}, right: {collect_error[0][1]}')
         if speedR > 100:
             speedR = 90
             speedL -= 10
         if speedL > 100:
             speedL = 90
             speedR -= 10
-        print(f"speedR: {speedR}, speedL: {speedL}")
     except:
         pass
-    motorR.setSpeed(speedR, True)
-    motorL.setSpeed(speedL, True)
+    motorR.setSpeed(speedR * find_something * start, True)
+    motorL.setSpeed(speedL * find_something * start, True)
 
 def detect(frame):
-    results = model.predict(frame)
+    results = model.predict(frame, conf = 0.13)
     collect = dict()
 
     frame = results[0].plot()
@@ -87,7 +89,9 @@ def detect(frame):
         conf = float(box.conf[0])             
         cls = int(box.cls[0])                  
         label = model.names[cls]
-        collect[label] = [[x1, y1, x2, y2], conf]
+        collect[label] = [[x1, y1, x2, y2], conf, abs(x1-x2)]
+    # cv.imshow("frame", frame)
+    print(collect)
     return collect          
 
 cap = cv.VideoCapture(0)
@@ -127,18 +131,36 @@ while cap.isOpened():
             cy = int(M["m01"] / M["m00"])
             dist = cx - mid[0]
             store_dist.append(dist)
-            cv.line(cropped_frame, mid, (cx, cy+plus), (0,0,0), 2)
-            cv.circle(cropped_frame, (cx, cy+ plus), 5, (255, 0, 0), -1)
+            # cv.line(cropped_frame, mid, (cx, cy+plus), (0,0,0), 2)
+            # cv.circle(cropped_frame, (cx, cy+ plus), 5, (255, 0, 0), -1)
     adjust_motor(store_dist, dist_mid)
 
-    cv.circle(cropped_frame, mid, 5, (0,255,0), -1)
+    # cv.circle(cropped_frame, mid, 5, (0,255,0), -1)
 #----------------------------------OBJECT DETECT----------------------------------------------
     count += 1
     if count == 7:
+        find_something = 1
         describe = detect(frame)
+        if not bool(start):
+            motorR.setSpeed(0, True)
+            motorL.setSpeed(0, True)
+            if 'green' in list(describe.keys()):
+                print('green')
+                start = 1
+        else:
+            if len(describe.keys()) == 1:
+                if list(describe.keys())[0] == "leeling":
+                    if describe['leeling'][2] > 62: # 67
+                        print('stop')
+                        find_something = 0
+                elif list(describe.keys())[0] == "stop":
+                    if describe['stop'][2] > 21: # 20
+                        print('stop')
+                        find_something = 0
+
         count = 0
 #---------------------------------------------------------------------------------------------
-    cv.imshow('Processed ROI', cropped_frame)
+    # cv.imshow('Processed ROI', cropped_frame)
 
     if cv.waitKey(33) & 0xFF == ord('q'):
         break

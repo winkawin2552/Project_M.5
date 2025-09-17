@@ -145,17 +145,14 @@ while cap.isOpened():
             motorR.setSpeed(0, True)
             motorL.setSpeed(0, True)
             if 'green' in list(describe.keys()):
-                print('green')
                 start = 1
         else:
             if len(describe.keys()) == 1:
                 if list(describe.keys())[0] == "leeling":
                     if describe['leeling'][2] > 62: # 67
-                        print('stop')
                         find_something = 0
                 elif list(describe.keys())[0] == "stop":
                     if describe['stop'][2] > 21: # 20
-                        print('stop')
                         find_something = 0
 
         count = 0

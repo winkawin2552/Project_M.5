@@ -3,6 +3,7 @@ import numpy as np
 from libraries.l298n import L298N
 from RPi.GPIO import *
 from ultralytics import YOLO
+import time
 setmode(BCM)
 
 model = YOLO("best.torchscript")
@@ -79,7 +80,7 @@ def adjust_motor(store_dist, dist_mid = 151):
     motorL.setSpeed(speedL * find_something * start, True)
 
 def detect(frame):
-    results = model.predict(frame, conf = 0.13)
+    results = model.predict(frame, conf = 0.09)
     collect = dict()
 
     frame = results[0].plot()
@@ -90,7 +91,7 @@ def detect(frame):
         cls = int(box.cls[0])                  
         label = model.names[cls]
         collect[label] = [[x1, y1, x2, y2], conf, abs(x1-x2)]
-    # cv.imshow("frame", frame)
+    cv.imshow("frame", frame)
     print(collect)
     return collect          
 
@@ -149,10 +150,10 @@ while cap.isOpened():
         else:
             if len(describe.keys()) == 1:
                 if list(describe.keys())[0] == "leeling":
-                    if describe['leeling'][2] > 62: # 67
+                    if describe['leeling'][2] > 59: # 67
                         find_something = 0
                 elif list(describe.keys())[0] == "stop":
-                    if describe['stop'][2] > 21: # 20
+                    if describe['stop'][2] > 22: # 20
                         find_something = 0
 
         count = 0
